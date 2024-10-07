@@ -1,7 +1,7 @@
 import os
 import execjs
 import feapder
-
+import requests
 
 class CQ(feapder.AirSpider):
     __custom_setting__ = dict(
@@ -10,17 +10,27 @@ class CQ(feapder.AirSpider):
     )
 
     def start_requests(self):
-        # 使用新的登录 URL，使用 POST 方法
+        # 使用新的登录 URL，尝试使用 GET 方法并确保请求头完整
         login_url = "https://ids.gzist.edu.cn/lyuapServer/login?service=https://portal.gzist.edu.cn"
         post_data = {
             "username": USERNAME,
             "password": self.encrypt_password(PASSWORD),
-            # 这里如果有其他需要的字段，继续补充
+            # 如果需要额外的字段，继续补充
         }
-        yield feapder.Request(url=login_url, method="POST", data=post_data, callback=self.parse_tryLogin)
+
+        # 添加必要的请求头
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cache-Control": "no-cache"
+        }
+
+        # 使用 POST 方法并发送数据
+        yield feapder.Request(url=login_url, method="POST", data=post_data, headers=headers, callback=self.parse_tryLogin)
 
     def parse_tryLogin(self, request, response):
-        # 检查响应的状态码，405错误提示是请求方法错误
+        # 检查响应的状态码，确保请求成功
         if response.status_code != 200:
             print(f"请求失败，状态码: {response.status_code}")
             return
@@ -35,7 +45,7 @@ class CQ(feapder.AirSpider):
 
         try:
             # 检查是否登录成功
-            params = {"ticket": login_response["ticket"]}  # 如果有不同字段名称，可以根据实际情况修改
+            params = {"ticket": login_response["ticket"]}  # 根据实际返回的字段调整
         except KeyError:
             # 处理登录失败的各种情况
             if login_response.get("data", {}).get("code") == 'NOUSER':
@@ -59,11 +69,21 @@ class CQ(feapder.AirSpider):
             "APPID": "5405362541914944",
             "APPNAME": "swmzncqapp"
         }
-        yield feapder.Request(url=url, method="POST", callback=self.parse_done, cookies=cookies, json=json)
+
+        # 添加请求头并使用 POST 请求
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Type": "application/json"
+        }
+
+        yield feapder.Request(url=url, method="POST", callback=self.parse_done, cookies=cookies, json=json, headers=headers)
 
     def parse_done(self, request, response):
         url = "https://xsfw.gzist.edu.cn/xsfw/sys/swmzncqapp/modules/studentCheckController/uniFormSignUp.do"
         cookies = response.cookies
+
+        # 使用 GET 方法继续请求
         yield feapder.Request(url=url, method="GET", callback=self.parse, cookies=cookies)
 
     def parse(self, request, response):
