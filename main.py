@@ -10,24 +10,24 @@ class CQ(feapder.AirSpider):
     )
 
     def start_requests(self):
-        # 使用新的登录 URL，尝试使用 GET 方法并确保请求头完整
-        login_url = "https://ids.gzist.edu.cn/lyuapServer/login?service=https://portal.gzist.edu.cn"
-        post_data = {
-            "username": USERNAME,
-            "password": self.encrypt_password(PASSWORD),
-            # 如果需要额外的字段，继续补充
-        }
+    # 使用新的登录 URL，尝试使用 GET 方法传递数据
+    login_url = "https://ids.gzist.edu.cn/lyuapServer/login?service=https://portal.gzist.edu.cn"
+    params = {
+        "username": USERNAME,
+        "password": self.encrypt_password(PASSWORD),
+        # 这里如果有其他需要的字段，继续补充
+    }
 
-        # 添加必要的请求头
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Cache-Control": "no-cache"
-        }
+    # 添加必要的请求头
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache"
+    }
 
-        # 使用 POST 方法并发送数据
-        yield feapder.Request(url=login_url, method="POST", data=post_data, headers=headers, callback=self.parse_tryLogin)
+    # 尝试将请求方法改为 GET 并传递参数
+    yield feapder.Request(url=login_url, method="GET", params=params, headers=headers, callback=self.parse_tryLogin)
+
 
     def parse_tryLogin(self, request, response):
         # 检查响应的状态码，确保请求成功
