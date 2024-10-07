@@ -11,30 +11,34 @@ class CQ(feapder.AirSpider):
     )
 
     def start_requests(self):
-        # 使用新的登录 URL，尝试使用 POST 方法传递数据
+        # 登录 URL
         login_url = "https://ids.gzist.edu.cn/lyuapServer/login?service=https://portal.gzist.edu.cn"
+
+        # 模拟登录表单数据
         post_data = {
             "username": USERNAME,
             "password": self.encrypt_password(PASSWORD),
-            # 如果需要额外的字段，继续补充
+            # 如果需要其他字段，继续补充
         }
 
-        # 添加必要的请求头
+        # 模拟浏览器的请求头
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
+            "Content-Type": "application/x-www-form-urlencoded",  # 必须是表单提交
             "X-Content-Type-Options": "nosniff",
-            "Content-Type": "application/x-www-form-urlencoded",  # 这里是 POST 请求的关键
-            "Cache-Control": "no-cache"
+            "Cache-Control": "no-cache",
+            "Referer": "https://ids.gzist.edu.cn/lyuapServer/login",  # 设置登录页面的 Referer
+            "Origin": "https://ids.gzist.edu.cn",  # 添加 Origin 头部
         }
 
-        # 尝试将请求方法改为 POST 并发送表单数据
+        # 尝试使用 POST 方法发起请求
         yield feapder.Request(url=login_url, method="POST", data=post_data, headers=headers, callback=self.parse_tryLogin)
 
     def parse_tryLogin(self, request, response):
-        # 检查响应的状态码，确保请求成功
+        # 检查响应状态码
         if response.status_code != 200:
             print(f"请求失败，状态码: {response.status_code}")
-            print(f"响应内容: {response.text}")  # 输出响应内容以便调试
+            print(f"响应内容: {response.text}")  # 打印响应内容以调试
             return
 
         # 打印响应内容以检查是否为 JSON 格式
@@ -49,9 +53,9 @@ class CQ(feapder.AirSpider):
 
         try:
             # 检查是否登录成功
-            params = {"ticket": login_response["ticket"]}  # 根据实际返回的字段调整
+            params = {"ticket": login_response["ticket"]}  # 根据实际返回字段调整
         except KeyError:
-            # 处理登录失败的各种情况
+            # 处理登录失败的情况
             if login_response.get("data", {}).get("code") == 'NOUSER':
                 print("用户名错误")
                 send_data(f"{USERNAME}: 用户名错误")
@@ -74,7 +78,7 @@ class CQ(feapder.AirSpider):
             "APPNAME": "swmzncqapp"
         }
 
-        # 添加请求头并使用 POST 请求
+        # 设置请求头
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36",
             "X-Content-Type-Options": "nosniff",
@@ -87,7 +91,7 @@ class CQ(feapder.AirSpider):
         url = "https://xsfw.gzist.edu.cn/xsfw/sys/swmzncqapp/modules/studentCheckController/uniFormSignUp.do"
         cookies = response.cookies
 
-        # 使用 GET 方法继续请求
+        # 发起请求继续流程
         yield feapder.Request(url=url, method="GET", callback=self.parse, cookies=cookies)
 
     def parse(self, request, response):
